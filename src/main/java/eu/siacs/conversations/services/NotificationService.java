@@ -75,16 +75,19 @@ public class NotificationService {
     private static final int CALL_DAT = 120;
     private static final long[] CALL_PATTERN = {0, 3 * CALL_DAT, CALL_DAT, CALL_DAT, 3 * CALL_DAT, CALL_DAT, CALL_DAT};
 
-    private static final String CONVERSATIONS_GROUP = "eu.siacs.conversations";
+    private static final String MESSAGES_GROUP = "eu.siacs.conversations.messages";
+    private static final String MISSED_CALLS_GROUP = "eu.siacs.conversations.missed_calls";
     private static final int NOTIFICATION_ID_MULTIPLIER = 1024 * 1024;
     static final int FOREGROUND_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 4;
     private static final int NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 2;
     private static final int ERROR_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 6;
     private static final int INCOMING_CALL_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 8;
     public static final int ONGOING_CALL_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 10;
+    public static final int MISSED_CALL_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 12;
     private final XmppConnectionService mXmppConnectionService;
     private final LinkedHashMap<String, ArrayList<Message>> notifications = new LinkedHashMap<>();
     private final HashMap<Conversation, AtomicInteger> mBacklogMessageCounter = new HashMap<>();
+    private final LinkedHashMap<Conversation, Integer> mMissedCalls = new LinkedHashMap<>();
     private Conversation mOpenConversation;
     private boolean mIsInForeground;
     private long mLastNotification;
@@ -182,6 +185,14 @@ public class NotificationService {
         ongoingCallsChannel.setGroup("calls");
         notificationManager.createNotificationChannel(ongoingCallsChannel);
 
+        final NotificationChannel missedCallsChannel = new NotificationChannel("missed_calls",
+                c.getString(R.string.missed_calls_channel_name),
+                NotificationManager.IMPORTANCE_HIGH);
+        missedCallsChannel.setShowBadge(true);
+        missedCallsChannel.setLightColor(LED_COLOR);
+        missedCallsChannel.enableLights(true);
+        missedCallsChannel.setGroup("calls");
+        notificationManager.createNotificationChannel(missedCallsChannel);
 
         final NotificationChannel messagesChannel = new NotificationChannel("messages",
                 c.getString(R.string.messages_channel_name),
@@ -457,6 +468,17 @@ public class NotificationService {
         }
     }
 
+    public void pushMissedCall(final Conversation conversation) {
+        synchronized (mMissedCalls) {
+            if (mMissedCalls.containsKey(conversation)) {
+                mMissedCalls.put(conversation, mMissedCalls.get(conversation) + 1);
+            } else {
+                mMissedCalls.put(conversation, 1);
+            }
+            updateMissedCallNotification();
+        }
+    }
+
     public void clear() {
         synchronized (notifications) {
             for (ArrayList<Message> messages : notifications.values()) {
@@ -464,6 +486,10 @@ public class NotificationService {
             }
             notifications.clear();
             updateNotification(false);
+        }
+        synchronized (mMissedCalls) {
+            mMissedCalls.clear();
+            updateMissedCallNotification();
         }
     }
 
@@ -476,6 +502,12 @@ public class NotificationService {
             if (notifications.remove(conversation.getUuid()) != null) {
                 cancel(conversation.getUuid(), NOTIFICATION_ID);
                 updateNotification(false, null, true);
+            }
+        }
+        synchronized (mMissedCalls) {
+            if (mMissedCalls.remove(conversation) != null) {
+                cancel(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID);
+                updateMissedCallNotification();
             }
         }
     }
@@ -547,7 +579,7 @@ public class NotificationService {
                             singleBuilder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY);
                         }
                         modifyForSoundVibrationAndLight(singleBuilder, notifyThis, quiteHours, preferences);
-                        singleBuilder.setGroup(CONVERSATIONS_GROUP);
+                        singleBuilder.setGroup(MESSAGES_GROUP);
                         setNotificationColor(singleBuilder);
                         notify(entry.getKey(), NOTIFICATION_ID, singleBuilder.build());
                     }
@@ -555,6 +587,15 @@ public class NotificationService {
                 notify(NOTIFICATION_ID, mBuilder.build());
             }
         }
+    }
+
+    private void updateMissedCallNotification() {
+        if (mMissedCalls.isEmpty()) {
+            cancel(MISSED_CALL_NOTIFICATION_ID);
+            return;
+        }
+
+        // TODO
     }
 
     private void modifyForSoundVibrationAndLight(Builder mBuilder, boolean notify, boolean quietHours, SharedPreferences preferences) {
@@ -651,7 +692,7 @@ public class NotificationService {
             mBuilder.setContentIntent(createContentIntent(conversation));
         }
         mBuilder.setGroupSummary(true);
-        mBuilder.setGroup(CONVERSATIONS_GROUP);
+        mBuilder.setGroup(MESSAGES_GROUP);
         mBuilder.setDeleteIntent(createDeleteIntent(null));
         mBuilder.setSmallIcon(R.drawable.ic_notification);
         return mBuilder;
