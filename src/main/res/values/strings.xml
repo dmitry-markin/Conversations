@@ -916,6 +916,7 @@
     <string name="outgoing_call">Outgoing call</string>
     <string name="outgoing_call_duration">Outgoing call · %s</string>
     <string name="missed_call">Missed call</string>
+    <string name="n_missed_calls_from_m_contacts">%1$d missed call(s) from %2$d contact(s)</string>
     <string name="audio_call">Audio call</string>
     <string name="video_call">Video call</string>
     <string name="help">Help</string>
