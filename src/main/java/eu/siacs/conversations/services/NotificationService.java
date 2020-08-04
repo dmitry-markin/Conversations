@@ -189,6 +189,7 @@ public class NotificationService {
                 c.getString(R.string.missed_calls_channel_name),
                 NotificationManager.IMPORTANCE_HIGH);
         missedCallsChannel.setShowBadge(true);
+        missedCallsChannel.setSound(null, null);
         missedCallsChannel.setLightColor(LED_COLOR);
         missedCallsChannel.enableLights(true);
         missedCallsChannel.setGroup("calls");
