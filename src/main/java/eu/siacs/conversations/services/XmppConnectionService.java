@@ -1819,7 +1819,7 @@ public class XmppConnectionService extends Service {
     private void restoreMessages(Conversation conversation) {
         conversation.addAll(0, databaseBackend.getMessages(conversation, Config.PAGE_SIZE));
         conversation.findUnsentTextMessages(message -> markMessage(message, Message.STATUS_WAITING));
-        conversation.findUnreadMessages(message -> mNotificationService.pushFromBacklog(message));
+        conversation.findUnreadMessagesAndCalls(message -> mNotificationService.pushFromBacklog(message));
     }
 
     public void loadPhoneContacts() {

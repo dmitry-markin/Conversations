@@ -238,7 +238,8 @@ public class NotificationService {
         return message.getStatus() == Message.STATUS_RECEIVED
                 && !conversation.isMuted()
                 && (conversation.alwaysNotify() || wasHighlightedOrPrivate(message))
-                && (!conversation.isWithStranger() || notificationsFromStrangers());
+                && (!conversation.isWithStranger() || notificationsFromStrangers())
+                && message.getType() != Message.TYPE_RTP_SESSION;
     }
 
     public boolean notificationsFromStrangers() {
@@ -266,6 +267,10 @@ public class NotificationService {
             synchronized (notifications) {
                 getBacklogMessageCounter((Conversation) message.getConversation()).incrementAndGet();
                 pushToStack(message);
+            }
+        } else if (message.getType() == Message.TYPE_RTP_SESSION) {
+            synchronized (mMissedCalls) {
+                pushMissedCall(message.getConversation());
             }
         }
     }
@@ -300,6 +305,9 @@ public class NotificationService {
                 }
                 updateNotification(count > 0, conversations);
             }
+        }
+        synchronized (mMissedCalls) {
+            updateMissedCallNotifications();
         }
     }
 
@@ -468,13 +476,17 @@ public class NotificationService {
         }
     }
 
+    private void pushMissedCall(final Conversational conversation) {
+        if (mMissedCalls.containsKey(conversation)) {
+            mMissedCalls.put(conversation, mMissedCalls.get(conversation) + 1);
+        } else {
+            mMissedCalls.put(conversation, 1);
+        }
+    }
+
     public void pushMissedCallNow(final Conversational conversation) {
         synchronized (mMissedCalls) {
-            if (mMissedCalls.containsKey(conversation)) {
-                mMissedCalls.put(conversation, mMissedCalls.get(conversation) + 1);
-            } else {
-                mMissedCalls.put(conversation, 1);
-            }
+            pushMissedCall(conversation);
             updateMissedCallNotifications();
         }
     }
