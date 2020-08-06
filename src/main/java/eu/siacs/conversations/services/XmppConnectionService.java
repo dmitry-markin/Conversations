@@ -637,9 +637,9 @@ public class XmppConnectionService extends Service {
                         try {
                             final Conversation c = findConversationByUuid(uuid);
                             if (c != null) {
-                                mNotificationService.clear(c);
+                                mNotificationService.clearMessages(c);
                             } else {
-                                mNotificationService.clear();
+                                mNotificationService.clearMessages();
                             }
                             restoredFromDatabaseLatch.await();
 
@@ -722,7 +722,7 @@ public class XmppConnectionService extends Service {
                             return;
                         }
                         c.setMutedTill(System.currentTimeMillis() + 30 * 60 * 1000);
-                        mNotificationService.clear(c);
+                        mNotificationService.clearMessages(c);
                         updateConversation(c);
                     });
                 case AudioManager.RINGER_MODE_CHANGED_ACTION:

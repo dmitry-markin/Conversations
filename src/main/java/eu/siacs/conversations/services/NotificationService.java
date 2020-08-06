@@ -493,7 +493,12 @@ public class NotificationService {
         }
     }
 
-    public void clear() {
+    public void clear(final Conversation conversation) {
+        clearMessages(conversation);
+        clearMissedCalls(conversation);
+    }
+
+    public void clearMessages() {
         synchronized (notifications) {
             for (ArrayList<Message> messages : notifications.values()) {
                 markAsReadIfHasDirectReply(messages);
@@ -501,13 +506,9 @@ public class NotificationService {
             notifications.clear();
             updateNotification(false);
         }
-        synchronized (mMissedCalls) {
-            mMissedCalls.clear();
-            updateMissedCallNotifications(null);
-        }
     }
 
-    public void clear(final Conversation conversation) {
+    public void clearMessages(final Conversation conversation) {
         synchronized (this.mBacklogMessageCounter) {
             this.mBacklogMessageCounter.remove(conversation);
         }
@@ -518,6 +519,9 @@ public class NotificationService {
                 updateNotification(false, null, true);
             }
         }
+    }
+
+    public void clearMissedCalls(final Conversation conversation) {
         synchronized (mMissedCalls) {
             if (mMissedCalls.remove(conversation) != null) {
                 cancel(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID);
