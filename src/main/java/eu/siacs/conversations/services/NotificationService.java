@@ -521,6 +521,13 @@ public class NotificationService {
         }
     }
 
+    public void clearMissedCalls() {
+        synchronized (mMissedCalls) {
+            mMissedCalls.clear();
+            updateMissedCallNotifications(null);
+        }
+    }
+
     public void clearMissedCalls(final Conversation conversation) {
         synchronized (mMissedCalls) {
             if (mMissedCalls.remove(conversation) != null) {
@@ -738,6 +745,7 @@ public class NotificationService {
         if (firstConversation != null) {
             mBuilder.setContentIntent(createContentIntent(firstConversation));
         }
+        mBuilder.setDeleteIntent(createMissedCallsDeleteIntent(null));
         setNotificationColor(mBuilder);
         return mBuilder;
     }
@@ -766,6 +774,7 @@ public class NotificationService {
         if (conversation instanceof Conversation) {
             final Conversation c = (Conversation) conversation;
             mBuilder.setContentIntent(createContentIntent(c));
+            mBuilder.setDeleteIntent(createMissedCallsDeleteIntent(c));
             if (privateNotification) {
                 mBuilder.setLargeIcon(mXmppConnectionService.getAvatarService()
                         .get(c, AvatarService.getSystemUiAvatarSize(mXmppConnectionService)));
@@ -1112,12 +1121,22 @@ public class NotificationService {
 
     private PendingIntent createDeleteIntent(Conversation conversation) {
         final Intent intent = new Intent(mXmppConnectionService, XmppConnectionService.class);
-        intent.setAction(XmppConnectionService.ACTION_CLEAR_NOTIFICATION);
+        intent.setAction(XmppConnectionService.ACTION_CLEAR_MESSAGE_NOTIFICATION);
         if (conversation != null) {
             intent.putExtra("uuid", conversation.getUuid());
             return PendingIntent.getService(mXmppConnectionService, generateRequestCode(conversation, 20), intent, 0);
         }
         return PendingIntent.getService(mXmppConnectionService, 0, intent, 0);
+    }
+
+    private PendingIntent createMissedCallsDeleteIntent(final Conversation conversation) {
+        final Intent intent = new Intent(mXmppConnectionService, XmppConnectionService.class);
+        intent.setAction(XmppConnectionService.ACTION_CLEAR_MISSED_CALL_NOTIFICATION);
+        if (conversation != null) {
+            intent.putExtra("uuid", conversation.getUuid());
+            return PendingIntent.getService(mXmppConnectionService, generateRequestCode(conversation, 21), intent, 0);
+        }
+        return PendingIntent.getService(mXmppConnectionService, 1, intent, 0);
     }
 
     private PendingIntent createReplyIntent(Conversation conversation, boolean dismissAfterReply) {
