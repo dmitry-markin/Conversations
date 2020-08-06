@@ -87,7 +87,7 @@ public class NotificationService {
     private final XmppConnectionService mXmppConnectionService;
     private final LinkedHashMap<String, ArrayList<Message>> notifications = new LinkedHashMap<>();
     private final HashMap<Conversation, AtomicInteger> mBacklogMessageCounter = new HashMap<>();
-    private final LinkedHashMap<Conversational, Integer> mMissedCalls = new LinkedHashMap<>();
+    private final HashMap<Conversational, Integer> mMissedCalls = new HashMap<>();
     private Conversation mOpenConversation;
     private boolean mIsInForeground;
     private long mLastNotification;
@@ -308,7 +308,7 @@ public class NotificationService {
             }
         }
         synchronized (mMissedCalls) {
-            updateMissedCallNotifications();
+            updateMissedCallNotifications(mMissedCalls.keySet());
         }
     }
 
@@ -488,7 +488,7 @@ public class NotificationService {
     public void pushMissedCallNow(final Conversational conversation) {
         synchronized (mMissedCalls) {
             pushMissedCall(conversation);
-            updateMissedCallNotifications();
+            updateMissedCallNotifications(Collections.singleton(conversation));
         }
     }
 
@@ -502,7 +502,7 @@ public class NotificationService {
         }
         synchronized (mMissedCalls) {
             mMissedCalls.clear();
-            updateMissedCallNotifications();
+            updateMissedCallNotifications(null);
         }
     }
 
@@ -520,7 +520,7 @@ public class NotificationService {
         synchronized (mMissedCalls) {
             if (mMissedCalls.remove(conversation) != null) {
                 cancel(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID);
-                updateMissedCallNotifications();
+                updateMissedCallNotifications(null);
             }
         }
     }
@@ -602,7 +602,7 @@ public class NotificationService {
         }
     }
 
-    private void updateMissedCallNotifications() {
+    private void updateMissedCallNotifications(final Set<Conversational> update) {
         if (mMissedCalls.isEmpty()) {
             cancel(MISSED_CALL_NOTIFICATION_ID);
             return;
@@ -619,13 +619,17 @@ public class NotificationService {
             final Builder summaryBuilder = buildMissedCallsSummary(true);
             summaryBuilder.setPublicVersion(summaryPublicBuilder.build());
             notify(MISSED_CALL_NOTIFICATION_ID, summaryBuilder.build());
-            for (Map.Entry<Conversational, Integer> entry : mMissedCalls.entrySet()) {
-                final Conversational conversation = entry.getKey();
-                final int calls = entry.getValue();
-                final Builder publicBuilder = buildMissedCall(conversation, calls, false);
-                final Builder builder = buildMissedCall(conversation, calls, true);
-                builder.setPublicVersion(publicBuilder.build());
-                notify(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID, builder.build());
+            if (update != null) {
+                for (final Conversational conversation : update) {
+                    if (!mMissedCalls.containsKey(conversation)) {
+                        continue;
+                    }
+                    final int calls = mMissedCalls.get(conversation);
+                    final Builder publicBuilder = buildMissedCall(conversation, calls, false);
+                    final Builder builder = buildMissedCall(conversation, calls, true);
+                    builder.setPublicVersion(publicBuilder.build());
+                    notify(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID, builder.build());
+                }
             }
         }
     }
@@ -756,7 +760,6 @@ public class NotificationService {
                         .get(c, AvatarService.getSystemUiAvatarSize(mXmppConnectionService)));
             }
         }
-        mBuilder.setPriority(NotificationCompat.PRIORITY_DEFAULT);  // TODO: set depending on whether we need to notify or not
         setNotificationColor(mBuilder);
         return mBuilder;
     }
