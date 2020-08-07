@@ -622,25 +622,19 @@ public class NotificationService {
         if (mMissedCalls.size() == 1 && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             final Conversational conversation = mMissedCalls.keySet().iterator().next();
             final MissedCallsInfo info = mMissedCalls.values().iterator().next();
-            final Builder publicBuilder = buildMissedCall(conversation, info, false);
-            final Builder builder = buildMissedCall(conversation, info, true);
-            builder.setPublicVersion(publicBuilder.build());
-            notify(MISSED_CALL_NOTIFICATION_ID, builder.build());
+            final Notification notification = missedCall(conversation, info);
+            notify(MISSED_CALL_NOTIFICATION_ID, notification);
         } else {
-            final Builder summaryPublicBuilder = buildMissedCallsSummary(false);
-            final Builder summaryBuilder = buildMissedCallsSummary(true);
-            summaryBuilder.setPublicVersion(summaryPublicBuilder.build());
-            notify(MISSED_CALL_NOTIFICATION_ID, summaryBuilder.build());
+            final Notification summary = missedCallsSummary();
+            notify(MISSED_CALL_NOTIFICATION_ID, summary);
             if (update != null) {
                 for (final Conversational conversation : update) {
                     if (!mMissedCalls.containsKey(conversation)) {
                         continue;
                     }
                     final MissedCallsInfo info = mMissedCalls.get(conversation);
-                    final Builder publicBuilder = buildMissedCall(conversation, info, false);
-                    final Builder builder = buildMissedCall(conversation, info, true);
-                    builder.setPublicVersion(publicBuilder.build());
-                    notify(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID, builder.build());
+                    final Notification notification = missedCall(conversation, info);
+                    notify(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID, notification);
                 }
             }
         }
@@ -704,6 +698,13 @@ public class NotificationService {
         }
     }
 
+    private Notification missedCallsSummary() {
+        final Builder publicBuilder = buildMissedCallsSummary(false);
+        final Builder builder = buildMissedCallsSummary(true);
+        builder.setPublicVersion(publicBuilder.build());
+        return builder.build();
+    }
+
     private Builder buildMissedCallsSummary(boolean privateNotification) {
         final Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, "missed_calls");
         int totalCalls = 0;
@@ -748,6 +749,13 @@ public class NotificationService {
         mBuilder.setDeleteIntent(createMissedCallsDeleteIntent(null));
         setNotificationColor(mBuilder);
         return mBuilder;
+    }
+
+    private Notification missedCall(final Conversational conversation, final MissedCallsInfo info) {
+        final Builder publicBuilder = buildMissedCall(conversation, info, false);
+        final Builder builder = buildMissedCall(conversation, info, true);
+        builder.setPublicVersion(publicBuilder.build());
+        return builder.build();
     }
 
     private Builder buildMissedCall(final Conversational conversation, final MissedCallsInfo info, boolean privateNotification) {
