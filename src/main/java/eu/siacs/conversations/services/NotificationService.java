@@ -747,7 +747,7 @@ public class NotificationService {
             mBuilder.setContentIntent(createContentIntent(firstConversation));
         }
         mBuilder.setDeleteIntent(createMissedCallsDeleteIntent(null));
-        setNotificationColor(mBuilder);
+        modifyMissedCall(mBuilder);
         return mBuilder;
     }
 
@@ -788,8 +788,20 @@ public class NotificationService {
                         .get(c, AvatarService.getSystemUiAvatarSize(mXmppConnectionService)));
             }
         }
-        setNotificationColor(mBuilder);
+        modifyMissedCall(mBuilder);
         return mBuilder;
+    }
+
+    private void modifyMissedCall(final Builder mBuilder) {
+        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mXmppConnectionService);
+        final Resources resources = mXmppConnectionService.getResources();
+        final boolean led = preferences.getBoolean("led", resources.getBoolean(R.bool.led));
+        if (led) {
+            mBuilder.setLights(LED_COLOR, 2000, 3000);
+        }
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        mBuilder.setSound(null);
+        setNotificationColor(mBuilder);
     }
 
     private Builder buildMultipleConversation(final boolean notify, final boolean quietHours) {
