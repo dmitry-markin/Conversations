@@ -479,10 +479,11 @@ public class NotificationService {
 
     private void pushMissedCall(final Message message) {
         final Conversational conversation = message.getConversation();
-        if (mMissedCalls.containsKey(conversation)) {
-            mMissedCalls.get(conversation).newMissedCall(message.getTimeSent());
-        } else {
+        final MissedCallsInfo info = mMissedCalls.get(conversation);
+        if (info == null) {
             mMissedCalls.put(conversation, new MissedCallsInfo(message.getTimeSent()));
+        } else {
+            info.newMissedCall(message.getTimeSent());
         }
     }
 
@@ -629,10 +630,10 @@ public class NotificationService {
             notify(MISSED_CALL_NOTIFICATION_ID, summary);
             if (update != null) {
                 for (final Conversational conversation : update) {
-                    if (!mMissedCalls.containsKey(conversation)) {
+                    final MissedCallsInfo info = mMissedCalls.get(conversation);
+                    if (info == null) {
                         continue;
                     }
-                    final MissedCallsInfo info = mMissedCalls.get(conversation);
                     final Notification notification = missedCall(conversation, info);
                     notify(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID, notification);
                 }
