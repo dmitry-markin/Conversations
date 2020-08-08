@@ -631,11 +631,10 @@ public class NotificationService {
             if (update != null) {
                 for (final Conversational conversation : update) {
                     final MissedCallsInfo info = mMissedCalls.get(conversation);
-                    if (info == null) {
-                        continue;
+                    if (info != null) {
+                        final Notification notification = missedCall(conversation, info);
+                        notify(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID, notification);
                     }
-                    final Notification notification = missedCall(conversation, info);
-                    notify(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID, notification);
                 }
             }
         }
