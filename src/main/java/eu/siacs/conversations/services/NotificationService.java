@@ -699,13 +699,13 @@ public class NotificationService {
     }
 
     private Notification missedCallsSummary() {
-        final Builder publicBuilder = buildMissedCallsSummary(false);
-        final Builder builder = buildMissedCallsSummary(true);
+        final Builder publicBuilder = buildMissedCallsSummary(true);
+        final Builder builder = buildMissedCallsSummary(false);
         builder.setPublicVersion(publicBuilder.build());
         return builder.build();
     }
 
-    private Builder buildMissedCallsSummary(boolean privateNotification) {
+    private Builder buildMissedCallsSummary(boolean publicVersion) {
         final Builder builder = new NotificationCompat.Builder(mXmppConnectionService, "missed_calls");
         int totalCalls = 0;
         final StringBuilder names = new StringBuilder();
@@ -733,7 +733,7 @@ public class NotificationService {
                              mXmppConnectionService.getString(R.string.n_missed_calls_from_m_contacts, totalCalls, mMissedCalls.size());
         builder.setContentTitle(title);
         builder.setTicker(title);
-        if (privateNotification) {
+        if (!publicVersion) {
             builder.setContentText(names.toString());
         }
         builder.setSmallIcon(R.drawable.ic_notification);
@@ -752,27 +752,27 @@ public class NotificationService {
     }
 
     private Notification missedCall(final Conversational conversation, final MissedCallsInfo info) {
-        final Builder publicBuilder = buildMissedCall(conversation, info, false);
-        final Builder builder = buildMissedCall(conversation, info, true);
+        final Builder publicBuilder = buildMissedCall(conversation, info, true);
+        final Builder builder = buildMissedCall(conversation, info, false);
         builder.setPublicVersion(publicBuilder.build());
         return builder.build();
     }
 
-    private Builder buildMissedCall(final Conversational conversation, final MissedCallsInfo info, boolean privateNotification) {
+    private Builder buildMissedCall(final Conversational conversation, final MissedCallsInfo info, boolean publicVersion) {
         final Builder builder = new NotificationCompat.Builder(mXmppConnectionService, "missed_calls");
         final String title = (info.getNumberOfCalls() == 1) ? mXmppConnectionService.getString(R.string.missed_call) :
                                                               mXmppConnectionService.getString(R.string.n_missed_calls, info.getNumberOfCalls());
         builder.setContentTitle(title);
         final String name = conversation.getContact().getDisplayName();
-        if (privateNotification) {
-            builder.setContentText(name);
+        if (publicVersion) {
+            builder.setTicker(title);
+        } else {
             if (info.getNumberOfCalls() == 1) {
                 builder.setTicker(mXmppConnectionService.getString(R.string.missed_call_from_x, name));
             } else {
                 builder.setTicker(mXmppConnectionService.getString(R.string.n_missed_calls_from_x, info.getNumberOfCalls(), name));
             }
-        } else {
-            builder.setTicker(title);
+            builder.setContentText(name);
         }
         builder.setSmallIcon(R.drawable.ic_notification);
         // TODO: draw and set missed call icon instead
@@ -783,7 +783,7 @@ public class NotificationService {
             final Conversation c = (Conversation) conversation;
             builder.setContentIntent(createContentIntent(c));
             builder.setDeleteIntent(createMissedCallsDeleteIntent(c));
-            if (privateNotification) {
+            if (!publicVersion) {
                 builder.setLargeIcon(mXmppConnectionService.getAvatarService()
                         .get(c, AvatarService.getSystemUiAvatarSize(mXmppConnectionService)));
             }
