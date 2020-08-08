@@ -524,6 +524,9 @@ public class NotificationService {
 
     public void clearMissedCalls() {
         synchronized (mMissedCalls) {
+            for (final Conversational conversation : mMissedCalls.keySet()) {
+                cancel(conversation.getUuid(), MISSED_CALL_NOTIFICATION_ID);
+            }
             mMissedCalls.clear();
             updateMissedCallNotifications(null);
         }
