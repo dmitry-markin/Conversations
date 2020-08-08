@@ -706,7 +706,7 @@ public class NotificationService {
     }
 
     private Builder buildMissedCallsSummary(boolean privateNotification) {
-        final Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, "missed_calls");
+        final Builder builder = new NotificationCompat.Builder(mXmppConnectionService, "missed_calls");
         int totalCalls = 0;
         final StringBuilder names = new StringBuilder();
         long lastTime = 0;
@@ -731,24 +731,24 @@ public class NotificationService {
         final String title = (totalCalls == 1) ? mXmppConnectionService.getString(R.string.missed_call) :
                              (mMissedCalls.size() == 1) ? mXmppConnectionService.getString(R.string.n_missed_calls, totalCalls) :
                              mXmppConnectionService.getString(R.string.n_missed_calls_from_m_contacts, totalCalls, mMissedCalls.size());
-        mBuilder.setContentTitle(title);
-        mBuilder.setTicker(title);
+        builder.setContentTitle(title);
+        builder.setTicker(title);
         if (privateNotification) {
-            mBuilder.setContentText(names.toString());
+            builder.setContentText(names.toString());
         }
-        mBuilder.setSmallIcon(R.drawable.ic_notification);
+        builder.setSmallIcon(R.drawable.ic_notification);
         // TODO: draw and set missed call icon instead
-        mBuilder.setGroupSummary(true);
-        mBuilder.setGroup(MISSED_CALLS_GROUP);
-        mBuilder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN);
-        mBuilder.setCategory(NotificationCompat.CATEGORY_CALL);
-        mBuilder.setWhen(lastTime);
+        builder.setGroupSummary(true);
+        builder.setGroup(MISSED_CALLS_GROUP);
+        builder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN);
+        builder.setCategory(NotificationCompat.CATEGORY_CALL);
+        builder.setWhen(lastTime);
         if (firstConversation != null) {
-            mBuilder.setContentIntent(createContentIntent(firstConversation));
+            builder.setContentIntent(createContentIntent(firstConversation));
         }
-        mBuilder.setDeleteIntent(createMissedCallsDeleteIntent(null));
-        modifyMissedCall(mBuilder);
-        return mBuilder;
+        builder.setDeleteIntent(createMissedCallsDeleteIntent(null));
+        modifyMissedCall(builder);
+        return builder;
     }
 
     private Notification missedCall(final Conversational conversation, final MissedCallsInfo info) {
@@ -759,49 +759,49 @@ public class NotificationService {
     }
 
     private Builder buildMissedCall(final Conversational conversation, final MissedCallsInfo info, boolean privateNotification) {
-        final Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, "missed_calls");
+        final Builder builder = new NotificationCompat.Builder(mXmppConnectionService, "missed_calls");
         final String title = (info.getNumberOfCalls() == 1) ? mXmppConnectionService.getString(R.string.missed_call) :
                                                               mXmppConnectionService.getString(R.string.n_missed_calls, info.getNumberOfCalls());
-        mBuilder.setContentTitle(title);
+        builder.setContentTitle(title);
         final String name = conversation.getContact().getDisplayName();
         if (privateNotification) {
-            mBuilder.setContentText(name);
+            builder.setContentText(name);
             if (info.getNumberOfCalls() == 1) {
-                mBuilder.setTicker(mXmppConnectionService.getString(R.string.missed_call_from_x, name));
+                builder.setTicker(mXmppConnectionService.getString(R.string.missed_call_from_x, name));
             } else {
-                mBuilder.setTicker(mXmppConnectionService.getString(R.string.n_missed_calls_from_x, info.getNumberOfCalls(), name));
+                builder.setTicker(mXmppConnectionService.getString(R.string.n_missed_calls_from_x, info.getNumberOfCalls(), name));
             }
         } else {
-            mBuilder.setTicker(title);
+            builder.setTicker(title);
         }
-        mBuilder.setSmallIcon(R.drawable.ic_notification);
+        builder.setSmallIcon(R.drawable.ic_notification);
         // TODO: draw and set missed call icon instead
-        mBuilder.setGroup(MISSED_CALLS_GROUP);
-        mBuilder.setCategory(NotificationCompat.CATEGORY_CALL);
-        mBuilder.setWhen(info.getLastTime());
+        builder.setGroup(MISSED_CALLS_GROUP);
+        builder.setCategory(NotificationCompat.CATEGORY_CALL);
+        builder.setWhen(info.getLastTime());
         if (conversation instanceof Conversation) {
             final Conversation c = (Conversation) conversation;
-            mBuilder.setContentIntent(createContentIntent(c));
-            mBuilder.setDeleteIntent(createMissedCallsDeleteIntent(c));
+            builder.setContentIntent(createContentIntent(c));
+            builder.setDeleteIntent(createMissedCallsDeleteIntent(c));
             if (privateNotification) {
-                mBuilder.setLargeIcon(mXmppConnectionService.getAvatarService()
+                builder.setLargeIcon(mXmppConnectionService.getAvatarService()
                         .get(c, AvatarService.getSystemUiAvatarSize(mXmppConnectionService)));
             }
         }
-        modifyMissedCall(mBuilder);
-        return mBuilder;
+        modifyMissedCall(builder);
+        return builder;
     }
 
-    private void modifyMissedCall(final Builder mBuilder) {
+    private void modifyMissedCall(final Builder builder) {
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mXmppConnectionService);
         final Resources resources = mXmppConnectionService.getResources();
         final boolean led = preferences.getBoolean("led", resources.getBoolean(R.bool.led));
         if (led) {
-            mBuilder.setLights(LED_COLOR, 2000, 3000);
+            builder.setLights(LED_COLOR, 2000, 3000);
         }
-        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
-        mBuilder.setSound(null);
-        setNotificationColor(mBuilder);
+        builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        builder.setSound(null);
+        setNotificationColor(builder);
     }
 
     private Builder buildMultipleConversation(final boolean notify, final boolean quietHours) {
